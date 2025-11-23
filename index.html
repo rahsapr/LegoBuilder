@@ -325,7 +325,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            z-index: 300;
+            z-index: 1000; /* Increased z-index to be safe */
             display: none;
             flex-direction: column;
             align-items: center;
@@ -333,6 +333,8 @@
             text-align: center;
             padding: 24px;
             animation: popIn 0.2s ease-out;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
         }
         .delete-modal-overlay.visible { display: flex; }
         @keyframes popIn {
@@ -360,7 +362,7 @@
 
     <div id="canvas-container"></div>
 
-    <div class="mode-indicator" id="delete-indicator">DELETE MODE - Click a highlighted block</div>
+    <div class="mode-indicator" id="delete-indicator">DELETE MODE - Click to Select</div>
     <div id="status-bar">AI Building... (Press ESC to Pause)</div>
     
     <!-- Start Hint -->
@@ -793,7 +795,8 @@ class LegoApp {
                 while(target.parent && target.parent.type !== 'Scene') target = target.parent;
                 
                 if (target !== this.plane) {
-                    document.body.style.cursor = 'not-allowed';
+                    // Use crosshair cursor instead of not-allowed
+                    document.body.style.cursor = 'crosshair';
                     if(this.ghostMesh) this.ghostMesh.visible = false;
                     
                     if (this.hoveredObject !== target) {
@@ -860,9 +863,19 @@ class LegoApp {
         if (event.target.closest('.panel') || event.target.closest('.color-btn') || event.target.closest('.part-btn') || event.target.closest('.nav-btn') || event.target.closest('#auto-build-menu')) return;
 
         if (this.isDeleteMode) {
-            if (this.hoveredObject) {
-                this.pendingDeleteObject = this.hoveredObject;
-                this.showDeleteModal();
+            // Perform an explicit raycast to find the target, ignoring hoveredObject state
+            this.raycaster.setFromCamera(this.mouse, this.camera);
+            const hitObjects = this.objects.filter(o => o.visible);
+            const intersects = this.raycaster.intersectObjects(hitObjects, true);
+            
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while(target.parent && target.parent.type !== 'Scene') target = target.parent;
+                
+                if (target !== this.plane) {
+                    this.pendingDeleteObject = target;
+                    this.showDeleteModal();
+                }
             }
         } else {
             this.triggerPlaceBlock(); 
@@ -923,8 +936,11 @@ class LegoApp {
     showDeleteModal() {
         const modal = document.getElementById('delete-modal');
         modal.classList.add('visible');
-        // Stop interaction briefly
-        this.deleteHelper.visible = true; 
+        // Keep the highlight visible so user knows what they clicked
+        if(this.pendingDeleteObject) {
+             this.deleteHelper.setFromObject(this.pendingDeleteObject);
+             this.deleteHelper.visible = true;
+        }
     }
 
     hideDeleteModal() {
@@ -1049,6 +1065,7 @@ class LegoApp {
             btn.innerHTML = 'Done <span style="opacity:0.7; font-size:0.9em">(D)</span>';
             ind.classList.add('visible');
             if(this.ghostMesh) this.ghostMesh.visible = false;
+            document.body.style.cursor = 'crosshair';
         } else {
             btn.classList.remove('danger');
             btn.innerHTML = 'Delete <span style="opacity:0.7; font-size:0.9em">(D)</span>';
@@ -1139,14 +1156,15 @@ class LegoApp {
         if(!confirm('Clear everything and start over?')) return;
         
         // 1. Remove ALL meshes from scene properly
-        for (let i = this.objects.length - 1; i >= 0; i--) {
-            const obj = this.objects[i];
-            if (obj !== this.plane) {
-                this.scene.remove(obj);
-                if(obj.geometry) obj.geometry.dispose();
-                if(obj.material) obj.material.dispose();
-            }
-        }
+        // Careful iterating backwards while removing
+        const toRemove = this.objects.filter(o => o !== this.plane);
+        
+        toRemove.forEach(obj => {
+            this.scene.remove(obj);
+            // Don't dispose if you want undo.. but Clear implies reset.
+            if(obj.geometry) obj.geometry.dispose();
+            if(obj.material) obj.material.dispose();
+        });
         
         // 2. Reset Application State
         this.objects = [this.plane];
