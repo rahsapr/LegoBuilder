@@ -8,7 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; background-color: #e0f7fa; }
         #canvas-container { width: 100vw; height: 100vh; display: block; }
         
         /* UI Overlay */
@@ -25,21 +25,23 @@
         }
 
         .panel {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 12px;
-            border-radius: 12px;
+            border-radius: 16px;
             pointer-events: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
             margin: 15px;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         /* Top Bar */
         .top-bar {
             align-self: center;
             display: flex;
-            gap: 15px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
             justify-content: center;
@@ -53,7 +55,7 @@
             align-items: flex-end;
             width: calc(100% - 30px);
             overflow-x: auto;
-            padding-bottom: 10px; /* Scrollbar space */
+            padding-bottom: 10px;
         }
 
         .palette-section {
@@ -65,60 +67,67 @@
         .color-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 6px;
+            gap: 8px;
         }
 
         .color-btn {
             width: 28px;
             height: 28px;
             border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            border: 3px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             cursor: pointer;
-            transition: transform 0.1s;
+            transition: transform 0.2s, border-color 0.2s;
         }
-        .color-btn:hover { transform: scale(1.15); }
-        .color-btn.active { border-color: #333; transform: scale(1.15); }
+        .color-btn:hover { transform: scale(1.2); }
+        .color-btn.active { border-color: #333; transform: scale(1.2); box-shadow: 0 0 0 2px white, 0 0 0 4px #3b82f6; }
 
         .parts-grid {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             overflow-x: auto;
-            padding: 4px;
+            padding: 6px;
             max-width: 600px;
             scrollbar-width: thin;
         }
         
-        .parts-grid::-webkit-scrollbar { height: 6px; }
-        .parts-grid::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        .parts-grid::-webkit-scrollbar { height: 4px; }
+        .parts-grid::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
 
         .part-btn {
-            min-width: 65px;
-            height: 75px;
-            background: #f3f4f6;
+            min-width: 70px;
+            height: 80px;
+            background: rgba(243, 244, 246, 0.8);
             border: 2px solid transparent;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             font-size: 10px;
-            font-weight: bold;
+            font-weight: 700;
             color: #555;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
-        .part-btn:hover { background: #e5e7eb; }
-        .part-btn.active { border-color: #2563eb; background: #eff6ff; color: #2563eb; }
+        .part-btn:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .part-btn.active { 
+            border-color: #3b82f6; 
+            background: #eff6ff; 
+            color: #2563eb; 
+            transform: translateY(-2px);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
         
         .part-icon {
             width: 40px;
             height: 30px;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             background-color: #cbd5e1;
             border: 1px solid #94a3b8;
             box-shadow: inset 0 -2px 0 rgba(0,0,0,0.1);
+            border-radius: 2px;
         }
         .shape-slope { clip-path: polygon(0 100%, 100% 100%, 0 0); }
         .shape-cyl { border-radius: 50%; width: 30px; height: 30px; }
@@ -131,107 +140,155 @@
             right: 20px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
             pointer-events: auto;
         }
 
         .nav-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: white;
-            border: 1px solid #ddd;
-            font-size: 18px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(255,255,255,0.5);
+            font-size: 20px;
             cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s;
+            color: #4b5563;
         }
-        .nav-btn:hover { background: #f9fafb; color: #2563eb; }
+        .nav-btn:hover { background: #fff; color: #2563eb; transform: scale(1.05); }
+        .nav-btn:active { transform: scale(0.95); }
 
         button.action-btn {
-            padding: 8px 16px;
+            padding: 10px 16px;
             background: #3b82f6;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
             font-size: 13px;
             white-space: nowrap;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
         }
-        button.action-btn:hover { background: #2563eb; }
-        button.action-btn.danger { background: #ef4444; }
-        button.action-btn.danger:hover { background: #dc2626; }
-        button.action-btn.secondary { background: #6b7280; }
-        button.action-btn.magic { background: #8b5cf6; background: linear-gradient(45deg, #8b5cf6, #ec4899); }
+        button.action-btn:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(59, 130, 246, 0.4); }
+        button.action-btn:active { transform: translateY(0); }
+        
+        button.action-btn.danger { background: #ef4444; box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3); }
+        button.action-btn.danger:hover { background: #dc2626; box-shadow: 0 4px 8px rgba(239, 68, 68, 0.4); }
+        
+        button.action-btn.secondary { background: #6b7280; box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3); }
+        button.action-btn.secondary:hover { background: #4b5563; }
+        
+        button.action-btn.warning { background: #f59e0b; box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3); }
+        button.action-btn.warning:hover { background: #d97706; }
+
+        button.action-btn.magic { 
+            background: linear-gradient(135deg, #8b5cf6, #ec4899); 
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        button.action-btn.magic:hover { box-shadow: 0 6px 16px rgba(139, 92, 246, 0.6); filter: brightness(1.1); }
         
         .mode-indicator {
             position: fixed;
-            top: 50%;
+            top: 100px;
             left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(220, 38, 38, 0.9);
+            transform: translateX(-50%);
+            background: rgba(239, 68, 68, 0.9);
             color: white;
-            padding: 15px 30px;
+            padding: 12px 30px;
             border-radius: 50px;
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             pointer-events: none;
             opacity: 0;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, transform 0.3s;
             z-index: 100;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+            letter-spacing: 1px;
         }
-        .mode-indicator.visible { opacity: 1; }
+        .mode-indicator.visible { opacity: 1; transform: translateX(-50%) translateY(10px); }
         
         #auto-build-menu {
             display: none;
             position: absolute;
-            top: 70px;
+            top: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             padding: 10px;
-            border-radius: 8px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             z-index: 50;
             flex-direction: column;
-            gap: 5px;
+            gap: 6px;
             pointer-events: auto; 
+            border: 1px solid rgba(0,0,0,0.05);
         }
-        #auto-build-menu.visible { display: flex; }
+        #auto-build-menu.visible { display: flex; animation: slideDown 0.2s ease-out; }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translate(-50%, -10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
 
         #status-bar {
             position: fixed;
-            bottom: 100px;
+            bottom: 120px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
+            background: rgba(17, 24, 39, 0.8);
             color: #fff;
-            padding: 8px 20px;
-            border-radius: 20px;
+            padding: 10px 24px;
+            border-radius: 30px;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 600;
             display: none;
             pointer-events: none;
             z-index: 90;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         #status-bar.visible { display: block; }
 
-        /* HELP BUTTON & MODAL */
+        #start-hint {
+            position: fixed;
+            bottom: 140px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            color: white;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.4);
+            z-index: 200;
+            pointer-events: none;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-10px); }
+        }
+
         .help-trigger {
             position: absolute;
             top: 20px;
             right: 20px;
-            width: 40px;
-            height: 40px;
-            background: white;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 50%;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            border: none;
-            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+            font-weight: 800;
             font-size: 20px;
             color: #3b82f6;
             cursor: pointer;
@@ -240,19 +297,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.2s;
+            transition: all 0.2s;
         }
-        .help-trigger:hover { transform: scale(1.1); }
+        .help-trigger:hover { transform: scale(1.1) rotate(10deg); background: white; }
 
         .help-modal {
             position: absolute;
-            top: 70px;
+            top: 80px;
             right: 20px;
-            width: 220px;
-            display: none; /* Hidden by default */
+            width: 240px;
+            display: none; 
             z-index: 200;
             flex-direction: column;
-            gap: 8px;
+            gap: 10px;
             transform-origin: top right;
         }
         .help-modal.visible { display: flex; animation: fadeIn 0.2s ease-out; }
@@ -262,16 +319,39 @@
             to { opacity: 1; transform: scale(1); }
         }
 
+        /* DELETE MODAL */
+        .delete-modal-overlay {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            min-width: 320px;
+            text-align: center;
+            padding: 24px;
+            animation: popIn 0.2s ease-out;
+        }
+        .delete-modal-overlay.visible { display: flex; }
+        @keyframes popIn {
+            from { opacity: 0; transform: translate(-50%, -45%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
         .key-badge {
             display: inline-block;
             background: #eff6ff;
-            padding: 2px 8px;
-            border-radius: 4px;
+            padding: 4px 8px;
+            border-radius: 6px;
             font-weight: 700;
             font-size: 11px;
             color: #2563eb;
             border: 1px solid #bfdbfe;
             box-shadow: 0 1px 0 #93c5fd;
+            min-width: 24px;
+            text-align: center;
         }
 
     </style>
@@ -280,15 +360,27 @@
 
     <div id="canvas-container"></div>
 
-    <div class="mode-indicator" id="delete-indicator">DELETE MODE</div>
+    <div class="mode-indicator" id="delete-indicator">DELETE MODE - Click a highlighted block</div>
     <div id="status-bar">AI Building... (Press ESC to Pause)</div>
+    
+    <!-- Start Hint -->
+    <div id="start-hint">👇 Select a shape below to start building!</div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="panel delete-modal-overlay">
+        <h3 class="text-xl font-bold text-gray-800 mb-6">Delete this block?</h3>
+        <div class="flex justify-center gap-4 w-full">
+            <button class="action-btn danger flex-1 py-3" onclick="app.confirmDelete()">Yes, Delete</button>
+            <button class="action-btn secondary flex-1 py-3" onclick="app.cancelDelete()">No, Keep</button>
+        </div>
+    </div>
 
     <!-- Help Button -->
     <button class="help-trigger" onclick="app.toggleHelp()" title="Show Controls">?</button>
 
     <!-- Help Modal -->
     <div id="help-modal" class="panel help-modal">
-        <h3 class="font-bold text-gray-700 border-b pb-2 mb-1 text-center">Controls</h3>
+        <h3 class="font-bold text-gray-700 border-b pb-3 mb-2 text-center text-lg">Controls</h3>
         <div class="flex justify-between items-center text-sm text-gray-600">
             <span>Place Brick</span>
             <span class="key-badge">SPACE</span>
@@ -303,13 +395,13 @@
         </div>
         <div class="flex justify-between items-center text-sm text-gray-600">
             <span>Rotate Cam</span>
-            <span class="key-badge">R-Click</span>
+            <span class="key-badge">Right Click</span>
         </div>
         <div class="flex justify-between items-center text-sm text-gray-600">
             <span>Pause AI</span>
             <span class="key-badge">ESC</span>
         </div>
-        <div class="text-xs text-gray-400 mt-1 text-center italic">
+        <div class="text-xs text-gray-400 mt-2 text-center italic">
             Tap anywhere to close
         </div>
     </div>
@@ -326,9 +418,10 @@
     <div id="ui-layer">
         <!-- Top Bar -->
         <div class="panel top-bar">
-            <h1 class="text-lg font-bold text-gray-800 mr-4">🧱 Brick Builder</h1>
+            <h1 class="text-xl font-extrabold text-gray-800 mr-2 tracking-tight">🧱 Brick Builder</h1>
             
             <button class="action-btn magic" onclick="app.toggleAutoMenu()">✨ Magic Build</button>
+            <button class="action-btn warning" onclick="app.undo()" title="Undo last action (Ctrl+Z)">↩ Undo</button>
             <button class="action-btn secondary" onclick="app.toggleGrid()">Grid</button>
             <button class="action-btn" onclick="app.saveScene()">Save</button>
             <button class="action-btn danger" onclick="app.clearScene()">Clear</button>
@@ -336,8 +429,8 @@
         
         <!-- Auto Build Dropdown -->
         <div id="auto-build-menu">
-            <h3 class="text-sm font-bold text-gray-500 mb-1 px-2">Select Model</h3>
-            <button class="action-btn magic mb-1" onclick="app.startAutoBuild('castle')">🏰 Grand Castle (100+)</button>
+            <h3 class="text-xs font-bold text-gray-400 mb-2 px-2 uppercase tracking-wider">Select Blueprint</h3>
+            <button class="action-btn magic mb-1" onclick="app.startAutoBuild('castle')">🏰 Grand Castle</button>
             <button class="action-btn magic mb-1" onclick="app.startAutoBuild('f1car')">🏎️ F1 Supercar</button>
             <button class="action-btn magic" onclick="app.startAutoBuild('xwing')">🚀 X-Wing Fighter</button>
         </div>
@@ -346,22 +439,22 @@
         <div class="bottom-bar">
             <!-- Colors -->
             <div class="panel palette-section">
-                <div class="text-xs font-bold text-gray-500 mb-1">COLORS</div>
+                <div class="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Colors</div>
                 <div class="color-grid" id="color-palette"></div>
             </div>
 
             <!-- Parts -->
             <div class="panel palette-section" style="flex-grow: 1;">
-                <div class="text-xs font-bold text-gray-500 mb-1">SHAPES</div>
+                <div class="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Shapes</div>
                 <div class="parts-grid" id="parts-list"></div>
             </div>
 
             <!-- Tools -->
             <div class="panel palette-section">
-                 <div class="text-xs font-bold text-gray-500 mb-1">TOOLS</div>
-                 <div style="display:flex; flex-direction:column; gap:5px;">
-                     <button class="action-btn" id="rotate-btn" onclick="app.rotatePiece()">Rotate (SHIFT)</button>
-                     <button class="action-btn secondary" id="delete-btn" onclick="app.toggleDeleteMode()">Delete (D)</button>
+                 <div class="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">Tools</div>
+                 <div style="display:flex; flex-direction:column; gap:8px;">
+                     <button class="action-btn" id="rotate-btn" onclick="app.rotatePiece()">Rotate <span style="opacity:0.7; font-size:0.9em">(SHIFT)</span></button>
+                     <button class="action-btn secondary" id="delete-btn" onclick="app.toggleDeleteMode()">Delete <span style="opacity:0.7; font-size:0.9em">(D)</span></button>
                  </div>
             </div>
         </div>
@@ -375,23 +468,29 @@ class LegoApp {
         this.camera = null;
         this.renderer = null;
         this.raycaster = null;
-        this.mouse = new THREE.Vector2();
+        this.mouse = new THREE.Vector2(); 
         this.controls = null;
         
         // State
         this.objects = []; 
         this.ghostMesh = null; 
+        this.hoveredObject = null; 
+        this.pendingDeleteObject = null; // New state for modal deletion
+        this.deleteHelper = null;  
         this.isDeleteMode = false;
         this.isAutoBuilding = false;
         this.isPaused = false;
+        
+        // Undo History
+        this.history = []; 
         
         // Interaction State
         this.mouseDownTime = 0;
         this.mouseDownPos = new THREE.Vector2();
         
-        // Selection State
+        // Selection State 
         this.selectedColor = '#C91A09'; 
-        this.selectedPart = 'brick_2x4';
+        this.selectedPart = null; 
         this.rotationIndex = 0; 
         
         // Definitions
@@ -408,9 +507,7 @@ class LegoApp {
             { hex: '#582A12', name: 'Brown' }
         ];
 
-        // EXPANDED PART LIBRARY
         this.parts = [
-            // Bricks
             { id: 'brick_2x4', name: '2x4 Brick', w: 2, d: 4, h: 3, type: 'brick' },
             { id: 'brick_2x2', name: '2x2 Brick', w: 2, d: 2, h: 3, type: 'brick' },
             { id: 'brick_1x2', name: '1x2 Brick', w: 1, d: 2, h: 3, type: 'brick' },
@@ -419,7 +516,6 @@ class LegoApp {
             { id: 'brick_1x3', name: '1x3 Brick', w: 1, d: 3, h: 3, type: 'brick' },
             { id: 'brick_1x6', name: '1x6 Brick', w: 1, d: 6, h: 3, type: 'brick' },
             { id: 'brick_1x8', name: '1x8 Brick', w: 1, d: 8, h: 3, type: 'brick' },
-            // Plates
             { id: 'plate_2x4', name: '2x4 Plate', w: 2, d: 4, h: 1, type: 'plate' },
             { id: 'plate_6x6', name: '6x6 Base', w: 6, d: 6, h: 1, type: 'plate' },
             { id: 'plate_1x1', name: '1x1 Plate', w: 1, d: 1, h: 1, type: 'plate' },
@@ -428,20 +524,13 @@ class LegoApp {
             { id: 'plate_1x4', name: '1x4 Plate', w: 1, d: 4, h: 1, type: 'plate' },
             { id: 'plate_1x6', name: '1x6 Plate', w: 1, d: 6, h: 1, type: 'plate' },
             { id: 'plate_1x8', name: '1x8 Plate', w: 1, d: 8, h: 1, type: 'plate' },
-            // Slopes
             { id: 'slope_2x2', name: '2x2 Slope', w: 2, d: 2, h: 3, type: 'slope', cssClass: 'shape-slope' },
             { id: 'slope_2x4', name: '2x4 Slope', w: 2, d: 4, h: 3, type: 'slope', cssClass: 'shape-slope' },
-            // Special
             { id: 'cyl_1x1', name: '1x1 Cyl', w: 1, d: 1, h: 3, type: 'cylinder', cssClass: 'shape-cyl' },
             { id: 'cyl_2x2', name: '2x2 Cyl', w: 2, d: 2, h: 3, type: 'cylinder', cssClass: 'shape-cyl' },
             { id: 'cone_1x1', name: '1x1 Cone', w: 1, d: 1, h: 3, type: 'cone', cssClass: 'shape-cone' },
             { id: 'arch_1x4', name: '1x4 Arch', w: 1, d: 4, h: 3, type: 'arch', cssClass: 'shape-arch' }
         ];
-        
-        // Helper for coordinates: 
-        // Plate H = 4, Brick H = 12. 
-        // X/Z are x10. 
-        // Center is at 0.
         
         this.blueprints = {
             castle: this.generateCastleBlueprint(),
@@ -455,179 +544,62 @@ class LegoApp {
         this.loadScene();
     }
     
+    // ... [Blueprint Generators - Kept Identical] ...
     generateCastleBlueprint() {
         const steps = [];
-        const GREY = '#A0A5A9';
-        const DARK_GREY = '#666666';
-        const WOOD = '#582A12';
-        const BLUE = '#0055BF';
-        
-        // 1. Massive Foundation (24x24 stud area) - Layer Y=0 (Plate)
-        for(let x=-2; x<=1; x++) {
-            for(let z=-2; z<=1; z++) {
-                 steps.push({id:'plate_6x6', c:DARK_GREY, x:x*60 + 30, y:0, z:z*60 + 30, r:0});
-            }
-        }
-        
-        // 2. Outer Walls (Layer Y=4, Brick)
-        // Perimeter
+        const GREY = '#A0A5A9'; const DARK_GREY = '#666666'; const WOOD = '#582A12'; const BLUE = '#0055BF';
+        for(let x=-2; x<=1; x++) for(let z=-2; z<=1; z++) steps.push({id:'plate_6x6', c:DARK_GREY, x:x*60 + 30, y:0, z:z*60 + 30, r:0});
         let y = 4;
-        // Front Wall (Leaving gap for gate)
-        steps.push({id:'brick_1x6', c:GREY, x:-60, y:y, z:80, r:1});
-        steps.push({id:'brick_1x6', c:GREY, x:60, y:y, z:80, r:1});
-        // Back Wall
-        steps.push({id:'brick_1x8', c:GREY, x:-40, y:y, z:-80, r:1});
-        steps.push({id:'brick_1x8', c:GREY, x:40, y:y, z:-80, r:1});
+        steps.push({id:'brick_1x6', c:GREY, x:-60, y:y, z:80, r:1}); steps.push({id:'brick_1x6', c:GREY, x:60, y:y, z:80, r:1});
+        steps.push({id:'brick_1x8', c:GREY, x:-40, y:y, z:-80, r:1}); steps.push({id:'brick_1x8', c:GREY, x:40, y:y, z:-80, r:1});
         steps.push({id:'brick_1x2', c:GREY, x:0, y:y, z:-80, r:1});
-        // Left Wall
-        steps.push({id:'brick_1x8', c:GREY, x:-80, y:y, z:-40, r:0});
-        steps.push({id:'brick_1x8', c:GREY, x:-80, y:y, z:40, r:0});
-        // Right Wall
-        steps.push({id:'brick_1x8', c:GREY, x:80, y:y, z:-40, r:0});
-        steps.push({id:'brick_1x8', c:GREY, x:80, y:y, z:40, r:0});
-        
-        // 3. Second Layer Walls (Y=16) - Staggered
+        steps.push({id:'brick_1x8', c:GREY, x:-80, y:y, z:-40, r:0}); steps.push({id:'brick_1x8', c:GREY, x:-80, y:y, z:40, r:0});
+        steps.push({id:'brick_1x8', c:GREY, x:80, y:y, z:-40, r:0}); steps.push({id:'brick_1x8', c:GREY, x:80, y:y, z:40, r:0});
         y = 16;
-        steps.push({id:'brick_1x6', c:GREY, x:-60, y:y, z:80, r:1});
-        steps.push({id:'brick_1x6', c:GREY, x:60, y:y, z:80, r:1});
-        steps.push({id:'brick_1x8', c:GREY, x:0, y:y, z:-80, r:1}); // Back center
-        steps.push({id:'brick_1x4', c:GREY, x:-60, y:y, z:-80, r:1});
-        steps.push({id:'brick_1x4', c:GREY, x:60, y:y, z:-80, r:1});
-        steps.push({id:'brick_1x8', c:GREY, x:-80, y:y, z:0, r:0});
+        steps.push({id:'brick_1x6', c:GREY, x:-60, y:y, z:80, r:1}); steps.push({id:'brick_1x6', c:GREY, x:60, y:y, z:80, r:1});
+        steps.push({id:'brick_1x8', c:GREY, x:0, y:y, z:-80, r:1}); steps.push({id:'brick_1x4', c:GREY, x:-60, y:y, z:-80, r:1});
+        steps.push({id:'brick_1x4', c:GREY, x:60, y:y, z:-80, r:1}); steps.push({id:'brick_1x8', c:GREY, x:-80, y:y, z:0, r:0});
         steps.push({id:'brick_1x8', c:GREY, x:80, y:y, z:0, r:0});
-        
-        // 4. Corner Towers (Base)
         const corners = [[-90, -90], [90, -90], [-90, 90], [90, 90]];
         corners.forEach(([cx, cz]) => {
-            steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:4, z:cz, r:0});
-            steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:16, z:cz, r:0});
-            steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:28, z:cz, r:0}); // Tall
-            steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:40, z:cz, r:0}); // Tall
-            steps.push({id:'cone_1x1', c:BLUE, x:cx-5, y:52, z:cz-5, r:0}); // Peaks
-            steps.push({id:'cone_1x1', c:BLUE, x:cx+5, y:52, z:cz+5, r:0}); 
-            steps.push({id:'cone_1x1', c:BLUE, x:cx-5, y:52, z:cz+5, r:0}); 
-            steps.push({id:'cone_1x1', c:BLUE, x:cx+5, y:52, z:cz-5, r:0}); 
+            steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:4, z:cz, r:0}); steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:16, z:cz, r:0});
+            steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:28, z:cz, r:0}); steps.push({id:'cyl_2x2', c:DARK_GREY, x:cx, y:40, z:cz, r:0}); 
+            steps.push({id:'cone_1x1', c:BLUE, x:cx-5, y:52, z:cz-5, r:0}); steps.push({id:'cone_1x1', c:BLUE, x:cx+5, y:52, z:cz+5, r:0}); 
+            steps.push({id:'cone_1x1', c:BLUE, x:cx-5, y:52, z:cz+5, r:0}); steps.push({id:'cone_1x1', c:BLUE, x:cx+5, y:52, z:cz-5, r:0}); 
         });
-        
-        // 5. Gatehouse
-        steps.push({id:'arch_1x4', c:DARK_GREY, x:0, y:4, z:80, r:1});
-        steps.push({id:'plate_1x6', c:WOOD, x:0, y:0, z:95, r:1}); // Drawbridge
-        
-        // 6. The Keep (Central Structure)
-        // Level 1
-        y = 4;
-        steps.push({id:'brick_2x4', c:GREY, x:-15, y:y, z:0, r:0});
-        steps.push({id:'brick_2x4', c:GREY, x:15, y:y, z:0, r:0});
-        // Level 2
-        y = 16;
-        steps.push({id:'brick_2x4', c:GREY, x:0, y:y, z:-10, r:1});
-        steps.push({id:'brick_2x4', c:GREY, x:0, y:y, z:10, r:1});
-        // Level 3
-        y = 28;
-        steps.push({id:'brick_2x2', c:GREY, x:0, y:y, z:0, r:0});
-        // Roof
-        steps.push({id:'slope_2x2', c:BLUE, x:0, y:40, z:0, r:0});
-        steps.push({id:'cone_1x1', c:'#F2CD37', x:0, y:52, z:0, r:0}); // Gold Spire
-        
-        // 7. Battlements (Plates on walls)
-        y = 28;
-        [-80, 80].forEach(x => {
-            for(let z=-60; z<=60; z+=20) {
-                 steps.push({id:'plate_1x1', c:DARK_GREY, x:x, y:y, z:z, r:0});
-            }
-        });
-        
+        steps.push({id:'arch_1x4', c:DARK_GREY, x:0, y:4, z:80, r:1}); steps.push({id:'plate_1x6', c:WOOD, x:0, y:0, z:95, r:1}); 
+        y = 4; steps.push({id:'brick_2x4', c:GREY, x:-15, y:y, z:0, r:0}); steps.push({id:'brick_2x4', c:GREY, x:15, y:y, z:0, r:0});
+        y = 16; steps.push({id:'brick_2x4', c:GREY, x:0, y:y, z:-10, r:1}); steps.push({id:'brick_2x4', c:GREY, x:0, y:y, z:10, r:1});
+        y = 28; steps.push({id:'brick_2x2', c:GREY, x:0, y:y, z:0, r:0});
+        steps.push({id:'slope_2x2', c:BLUE, x:0, y:40, z:0, r:0}); steps.push({id:'cone_1x1', c:'#F2CD37', x:0, y:52, z:0, r:0}); 
+        y = 28; [-80, 80].forEach(x => { for(let z=-60; z<=60; z+=20) steps.push({id:'plate_1x1', c:DARK_GREY, x:x, y:y, z:z, r:0}); });
         return steps;
     }
-    
     generateF1Blueprint() {
-        const steps = [];
-        const RED = '#C91A09';
-        const BLACK = '#232323';
-        const WHITE = '#FFFFFF';
-        
-        // 1. Floor / Chassis
-        let y = 4; // Start on a plate layer
-        for(let z=-40; z<=40; z+=20) {
-            steps.push({id:'plate_2x4', c:BLACK, x:0, y:0, z:z, r:0});
-        }
-        
-        // 2. Front Wing
-        steps.push({id:'plate_2x4', c:WHITE, x:0, y:4, z:50, r:1}); // Wide front
-        steps.push({id:'plate_1x2', c:RED, x:0, y:4, z:60, r:1}); // Nose tip
-        
-        // 3. Wheels (Using cyl rotated? No, just stack cyls sideways or simulate with bricks)
-        // We will use black 2x2 cylinders standing up as thick tires for simplicity in this grid
-        steps.push({id:'cyl_2x2', c:BLACK, x:-15, y:4, z:30, r:0}); // FL
-        steps.push({id:'cyl_2x2', c:BLACK, x:15, y:4, z:30, r:0});  // FR
-        steps.push({id:'cyl_2x2', c:BLACK, x:-15, y:4, z:-30, r:0}); // RL
-        steps.push({id:'cyl_2x2', c:BLACK, x:15, y:4, z:-30, r:0});  // RR
-        
-        // 4. Body Work (Bricks)
-        y = 4;
-        steps.push({id:'brick_1x6', c:RED, x:0, y:y, z:0, r:0}); // Main body
-        steps.push({id:'slope_2x2', c:RED, x:0, y:y+12, z:10, r:0}); // Slope to nose
-        steps.push({id:'brick_1x4', c:RED, x:0, y:y, z:30, r:0}); // Nose connection
-        
-        // 5. Sidepods
-        steps.push({id:'slope_2x2', c:RED, x:-10, y:y, z:0, r:3}); 
-        steps.push({id:'slope_2x2', c:RED, x:10, y:y, z:0, r:1});
-        
-        // 6. Rear Wing
-        steps.push({id:'brick_1x2', c:BLACK, x:0, y:y+12, z:-45, r:0}); // Support
-        steps.push({id:'plate_2x4', c:WHITE, x:0, y:y+24, z:-45, r:1}); // Wing Blade
-        
-        // 7. Driver
-        steps.push({id:'plate_1x1', c:'#F2CD37', x:0, y:y+8, z:-5, r:0}); // Helmet
-        
+        const steps = []; const RED = '#C91A09'; const BLACK = '#232323'; const WHITE = '#FFFFFF';
+        let y = 4; for(let z=-40; z<=40; z+=20) steps.push({id:'plate_2x4', c:BLACK, x:0, y:0, z:z, r:0});
+        steps.push({id:'plate_2x4', c:WHITE, x:0, y:4, z:50, r:1}); steps.push({id:'plate_1x2', c:RED, x:0, y:4, z:60, r:1}); 
+        steps.push({id:'cyl_2x2', c:BLACK, x:-15, y:4, z:30, r:0}); steps.push({id:'cyl_2x2', c:BLACK, x:15, y:4, z:30, r:0});  
+        steps.push({id:'cyl_2x2', c:BLACK, x:-15, y:4, z:-30, r:0}); steps.push({id:'cyl_2x2', c:BLACK, x:15, y:4, z:-30, r:0});  
+        y = 4; steps.push({id:'brick_1x6', c:RED, x:0, y:y, z:0, r:0}); steps.push({id:'slope_2x2', c:RED, x:0, y:y+12, z:10, r:0}); 
+        steps.push({id:'brick_1x4', c:RED, x:0, y:y, z:30, r:0}); steps.push({id:'slope_2x2', c:RED, x:-10, y:y, z:0, r:3}); 
+        steps.push({id:'slope_2x2', c:RED, x:10, y:y, z:0, r:1}); steps.push({id:'brick_1x2', c:BLACK, x:0, y:y+12, z:-45, r:0}); 
+        steps.push({id:'plate_2x4', c:WHITE, x:0, y:y+24, z:-45, r:1}); steps.push({id:'plate_1x1', c:'#F2CD37', x:0, y:y+8, z:-5, r:0}); 
         return steps;
     }
-    
     generateXWingBlueprint() {
-        const steps = [];
-        const BODY = '#E4CD9E'; // Tan/White
-        const GREY = '#A0A5A9';
-        const RED = '#C91A09';
-        
-        // 1. Fuselage Center (Long strip)
-        let y = 20; // Flying height
-        steps.push({id:'brick_1x8', c:BODY, x:0, y:y, z:0, r:0});
-        steps.push({id:'brick_1x6', c:BODY, x:0, y:y, z:40, r:0}); // Nose section
-        steps.push({id:'slope_2x2', c:BODY, x:0, y:y, z:65, r:0}); // Nose tip
-        
-        // 2. Cockpit
-        steps.push({id:'slope_2x2', c:GREY, x:0, y:y+12, z:10, r:0});
-        
-        // 3. Engines (4 Cylinders)
-        const engY = y;
-        steps.push({id:'cyl_2x2', c:GREY, x:-15, y:engY, z:-20, r:0});
-        steps.push({id:'cyl_2x2', c:GREY, x:15, y:engY, z:-20, r:0});
-        steps.push({id:'cyl_2x2', c:GREY, x:-15, y:engY+12, z:-20, r:0});
-        steps.push({id:'cyl_2x2', c:GREY, x:15, y:engY+12, z:-20, r:0});
-        
-        // 4. Engine Exhausts (Cones)
-        steps.push({id:'cone_1x1', c:RED, x:-15, y:engY, z:-35, r:3}); // rotation doesn't affect cone much visually but keeps logic
-        steps.push({id:'cone_1x1', c:RED, x:15, y:engY, z:-35, r:3});
-        
-        // 5. Wings (Plates extending out)
-        // Top Wings
-        steps.push({id:'plate_1x3', c:BODY, x:25, y:engY+12, z:-10, r:1});
-        steps.push({id:'plate_2x4', c:BODY, x:45, y:engY+12, z:-15, r:1});
-        steps.push({id:'plate_1x3', c:BODY, x:-25, y:engY+12, z:-10, r:1});
-        steps.push({id:'plate_2x4', c:BODY, x:-45, y:engY+12, z:-15, r:1});
-        
-        // Bottom Wings
-        steps.push({id:'plate_1x3', c:BODY, x:25, y:engY-4, z:-10, r:1});
-        steps.push({id:'plate_2x4', c:BODY, x:45, y:engY-4, z:-15, r:1});
-        steps.push({id:'plate_1x3', c:BODY, x:-25, y:engY-4, z:-10, r:1});
-        steps.push({id:'plate_2x4', c:BODY, x:-45, y:engY-4, z:-15, r:1});
-        
-        // 6. Laser Cannons (Cylinders on wingtips)
-        steps.push({id:'cyl_1x1', c:GREY, x:55, y:engY+12, z:0, r:0});
-        steps.push({id:'cyl_1x1', c:GREY, x:-55, y:engY+12, z:0, r:0});
-        steps.push({id:'cyl_1x1', c:GREY, x:55, y:engY-4, z:0, r:0});
-        steps.push({id:'cyl_1x1', c:GREY, x:-55, y:engY-4, z:0, r:0});
-
+        const steps = []; const BODY = '#E4CD9E'; const GREY = '#A0A5A9'; const RED = '#C91A09';
+        let y = 20; steps.push({id:'brick_1x8', c:BODY, x:0, y:y, z:0, r:0}); steps.push({id:'brick_1x6', c:BODY, x:0, y:y, z:40, r:0}); 
+        steps.push({id:'slope_2x2', c:BODY, x:0, y:y, z:65, r:0}); steps.push({id:'slope_2x2', c:GREY, x:0, y:y+12, z:10, r:0});
+        const engY = y; steps.push({id:'cyl_2x2', c:GREY, x:-15, y:engY, z:-20, r:0}); steps.push({id:'cyl_2x2', c:GREY, x:15, y:engY, z:-20, r:0});
+        steps.push({id:'cyl_2x2', c:GREY, x:-15, y:engY+12, z:-20, r:0}); steps.push({id:'cyl_2x2', c:GREY, x:15, y:engY+12, z:-20, r:0});
+        steps.push({id:'cone_1x1', c:RED, x:-15, y:engY, z:-35, r:3}); steps.push({id:'cone_1x1', c:RED, x:15, y:engY, z:-35, r:3});
+        steps.push({id:'plate_1x3', c:BODY, x:25, y:engY+12, z:-10, r:1}); steps.push({id:'plate_2x4', c:BODY, x:45, y:engY+12, z:-15, r:1});
+        steps.push({id:'plate_1x3', c:BODY, x:-25, y:engY+12, z:-10, r:1}); steps.push({id:'plate_2x4', c:BODY, x:-45, y:engY+12, z:-15, r:1});
+        steps.push({id:'plate_1x3', c:BODY, x:25, y:engY-4, z:-10, r:1}); steps.push({id:'plate_2x4', c:BODY, x:45, y:engY-4, z:-15, r:1});
+        steps.push({id:'plate_1x3', c:BODY, x:-25, y:engY-4, z:-10, r:1}); steps.push({id:'plate_2x4', c:BODY, x:-45, y:engY-4, z:-15, r:1});
+        steps.push({id:'cyl_1x1', c:GREY, x:55, y:engY+12, z:0, r:0}); steps.push({id:'cyl_1x1', c:GREY, x:-55, y:engY+12, z:0, r:0});
+        steps.push({id:'cyl_1x1', c:GREY, x:55, y:engY-4, z:0, r:0}); steps.push({id:'cyl_1x1', c:GREY, x:-55, y:engY-4, z:0, r:0});
         return steps;
     }
 
@@ -638,7 +610,7 @@ class LegoApp {
 
         const aspect = window.innerWidth / window.innerHeight;
         this.camera = new THREE.PerspectiveCamera(45, aspect, 1, 2000);
-        this.camera.position.set(120, 150, 120); // Zoomed out further for bigger builds
+        this.camera.position.set(120, 150, 120); 
         this.camera.lookAt(0, 0, 0);
 
         this.renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
@@ -653,22 +625,25 @@ class LegoApp {
         this.controls.dampingFactor = 0.05;
         this.controls.maxPolarAngle = Math.PI / 2 - 0.05;
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.75); 
         this.scene.add(ambientLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
         dirLight.position.set(100, 200, 100);
         dirLight.castShadow = true;
         this.scene.add(dirLight);
 
-        // Ground Plane
         const planeGeometry = new THREE.PlaneGeometry(2000, 2000);
         planeGeometry.rotateX(-Math.PI / 2);
         this.plane = new THREE.Mesh(planeGeometry, new THREE.MeshBasicMaterial({ visible: false }));
         this.scene.add(this.plane);
         this.objects.push(this.plane); 
+        
+        this.deleteHelper = new THREE.BoxHelper(this.plane, 0xff0000);
+        this.scene.add(this.deleteHelper);
+        this.deleteHelper.visible = false;
 
-        this.gridHelper = new THREE.GridHelper(1000, 100, 0x888888, 0xcccccc);
+        this.gridHelper = new THREE.GridHelper(1000, 100, 0x888888, 0xdddddd);
         this.gridHelper.position.y = 0.1;
         this.scene.add(this.gridHelper);
 
@@ -682,7 +657,6 @@ class LegoApp {
 
         this.raycaster = new THREE.Raycaster();
 
-        // Interaction Listeners
         document.addEventListener('mousemove', this.onMouseMove.bind(this));
         document.addEventListener('mousedown', this.onMouseDown.bind(this));
         document.addEventListener('mouseup', this.onMouseUp.bind(this));
@@ -702,7 +676,6 @@ class LegoApp {
              geometry = new THREE.CylinderGeometry(w/2 - 0.5, w/2 - 0.5, h, 32);
              geometry.translate(0, h/2, 0);
         } else if (type === 'cone') {
-             // Added Cone Geometry
              geometry = new THREE.CylinderGeometry(0, w/2 - 0.5, h, 32);
              geometry.translate(0, h/2, 0);
         } else if (type === 'slope') {
@@ -732,17 +705,16 @@ class LegoApp {
 
         const material = new THREE.MeshStandardMaterial({ 
             color: colorHex, 
-            roughness: 0.3, 
+            roughness: 0.2, 
             metalness: 0.1,
             transparent: isGhost,
-            opacity: isGhost ? 0.5 : 1.0
+            opacity: isGhost ? 0.6 : 1.0
         });
 
         const mesh = new THREE.Mesh(geometry, material);
         mesh.castShadow = !isGhost;
         mesh.receiveShadow = !isGhost;
 
-        // Studs for flat top surfaces only
         if (part.type !== 'slope' && part.type !== 'cone') {
             const studGeo = new THREE.CylinderGeometry(2.4, 2.4, 1.8, 16);
             const studMat = material; 
@@ -772,6 +744,14 @@ class LegoApp {
     }
 
     updateGhost() {
+        if (!this.selectedPart) {
+            if(this.ghostMesh) {
+                this.scene.remove(this.ghostMesh);
+                this.ghostMesh = null;
+            }
+            return;
+        }
+
         if (this.ghostMesh) {
             this.scene.remove(this.ghostMesh);
             this.ghostMesh = null;
@@ -788,9 +768,20 @@ class LegoApp {
         event.preventDefault();
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    }
+
+    updateInteraction() {
+        if (this.isAutoBuilding) return;
+        
+        // If modal is open, don't update interactions
+        if (this.pendingDeleteObject) return;
+
+        if (!this.selectedPart && !this.isDeleteMode) {
+            document.body.style.cursor = 'default';
+            return;
+        }
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
-
         const hitObjects = this.objects.filter(o => o.visible);
         const intersects = this.raycaster.intersectObjects(hitObjects, true);
 
@@ -798,36 +789,56 @@ class LegoApp {
             const intersect = intersects[0];
             
             if (this.isDeleteMode) {
-                document.body.style.cursor = 'not-allowed';
-                if(this.ghostMesh) this.ghostMesh.visible = false;
-                return;
-            } 
-
-            document.body.style.cursor = 'default';
-            if(this.ghostMesh) {
-                this.ghostMesh.visible = true;
+                let target = intersect.object;
+                while(target.parent && target.parent.type !== 'Scene') target = target.parent;
                 
-                const point = intersect.point;
-                const normal = intersect.face.normal;
-                
-                let targetPos = new THREE.Vector3().copy(point);
-                if (intersect.object !== this.plane) {
-                    targetPos.add(normal.clone().multiplyScalar(0.5));
+                if (target !== this.plane) {
+                    document.body.style.cursor = 'not-allowed';
+                    if(this.ghostMesh) this.ghostMesh.visible = false;
+                    
+                    if (this.hoveredObject !== target) {
+                        this.hoveredObject = target;
+                        this.deleteHelper.setFromObject(target);
+                        this.deleteHelper.visible = true;
+                    }
+                } else {
+                    document.body.style.cursor = 'default';
+                    this.hoveredObject = null;
+                    this.deleteHelper.visible = false;
                 }
-
-                const x = Math.floor(targetPos.x / 10) * 10 + 5;
-                const z = Math.floor(targetPos.z / 10) * 10 + 5;
+            } else {
+                // Build Mode
+                document.body.style.cursor = 'default';
+                this.deleteHelper.visible = false;
+                this.hoveredObject = null;
                 
-                let y = 0;
-                if (intersect.object !== this.plane) {
-                    y = Math.floor(targetPos.y / 4) * 4;
-                    if (y < 0) y = 0;
-                }
+                if(this.ghostMesh) {
+                    this.ghostMesh.visible = true;
+                    
+                    const point = intersect.point;
+                    const normal = intersect.face.normal;
+                    
+                    let targetPos = new THREE.Vector3().copy(point);
+                    if (intersect.object !== this.plane) {
+                        targetPos.add(normal.clone().multiplyScalar(0.5));
+                    }
 
-                this.ghostMesh.position.set(x, y, z);
+                    const x = Math.floor(targetPos.x / 10) * 10 + 5;
+                    const z = Math.floor(targetPos.z / 10) * 10 + 5;
+                    
+                    let y = 0;
+                    if (intersect.object !== this.plane) {
+                        y = Math.floor(targetPos.y / 4) * 4;
+                        if (y < 0) y = 0;
+                    }
+
+                    this.ghostMesh.position.set(x, y, z);
+                }
             }
         } else {
              if(this.ghostMesh) this.ghostMesh.visible = false;
+             this.deleteHelper.visible = false;
+             this.hoveredObject = null;
         }
     }
 
@@ -838,33 +849,45 @@ class LegoApp {
     }
 
     onMouseUp(event) {
+        // Modal safety check
+        if (this.pendingDeleteObject) return;
+
         const timeDiff = Date.now() - this.mouseDownTime;
         const dist = this.mouseDownPos.distanceTo(new THREE.Vector2(event.clientX, event.clientY));
         
-        if (dist > 5 || timeDiff > 500) return;
+        if (!this.isDeleteMode && (dist > 10 || timeDiff > 1000)) return;
 
         if (event.target.closest('.panel') || event.target.closest('.color-btn') || event.target.closest('.part-btn') || event.target.closest('.nav-btn') || event.target.closest('#auto-build-menu')) return;
 
         if (this.isDeleteMode) {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
-            const intersects = this.raycaster.intersectObjects(this.objects, true);
-            if (intersects.length > 0) {
-                let target = intersects[0].object;
-                while(target.parent && target.parent.type !== 'Scene') target = target.parent;
-                if (target !== this.plane) this.removeObject(target);
+            if (this.hoveredObject) {
+                this.pendingDeleteObject = this.hoveredObject;
+                this.showDeleteModal();
             }
+        } else {
+            this.triggerPlaceBlock(); 
         }
     }
 
     onKeyDown(event) {
+        // Ignore keys if modal is open
+        if (this.pendingDeleteObject && event.key !== 'Escape') return;
+
         const key = event.key.toLowerCase();
+        
+        if (key === 'z' && (event.ctrlKey || event.metaKey)) {
+            this.undo();
+            return;
+        }
         
         if (key !== 'shift' && key !== 'control') { 
              this.closeHelp(); 
         }
 
         if (key === 'escape') {
-            if (this.isAutoBuilding) {
+            if (this.pendingDeleteObject) {
+                this.cancelDelete();
+            } else if (this.isAutoBuilding) {
                 this.isPaused = !this.isPaused;
                 this.updateStatus(this.isPaused ? "Paused (Press ESC to Resume)" : "AI Building... (Press ESC to Pause)");
             } else if (this.isDeleteMode) {
@@ -878,7 +901,12 @@ class LegoApp {
         switch(key) {
             case ' ': 
                 event.preventDefault(); 
-                this.triggerPlaceBlock();
+                if(this.isDeleteMode && this.hoveredObject) {
+                     this.pendingDeleteObject = this.hoveredObject;
+                     this.showDeleteModal();
+                } else {
+                     this.triggerPlaceBlock();
+                }
                 break;
             case 'shift': 
                 this.rotatePiece();
@@ -892,6 +920,31 @@ class LegoApp {
         }
     }
     
+    showDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.add('visible');
+        // Stop interaction briefly
+        this.deleteHelper.visible = true; 
+    }
+
+    hideDeleteModal() {
+        const modal = document.getElementById('delete-modal');
+        modal.classList.remove('visible');
+    }
+
+    confirmDelete() {
+        if (this.pendingDeleteObject) {
+            this.removeObject(this.pendingDeleteObject);
+            this.pendingDeleteObject = null;
+        }
+        this.hideDeleteModal();
+    }
+
+    cancelDelete() {
+        this.pendingDeleteObject = null;
+        this.hideDeleteModal();
+    }
+    
     toggleHelp() {
         const modal = document.getElementById('help-modal');
         modal.classList.toggle('visible');
@@ -903,7 +956,7 @@ class LegoApp {
     }
     
     triggerPlaceBlock() {
-        if (this.isDeleteMode || !this.ghostMesh || !this.ghostMesh.visible) return;
+        if (this.isDeleteMode || !this.ghostMesh || !this.ghostMesh.visible || !this.selectedPart) return;
         
         this.placeBlock(
             this.selectedPart, 
@@ -920,6 +973,9 @@ class LegoApp {
         
         this.scene.add(newBrick);
         this.objects.push(newBrick);
+        
+        this.history.push({ type: 'add', mesh: newBrick });
+        if(this.history.length > 15) this.history.shift();
         
         newBrick.scale.set(0.1,0.1,0.1);
         let t = 0;
@@ -938,6 +994,29 @@ class LegoApp {
     removeObject(obj) {
         this.scene.remove(obj);
         this.objects = this.objects.filter(o => o !== obj);
+        
+        this.history.push({ type: 'remove', mesh: obj });
+        if(this.history.length > 15) this.history.shift();
+        
+        if (this.hoveredObject === obj) {
+            this.hoveredObject = null;
+            this.deleteHelper.visible = false;
+        }
+        
+        this.saveLocal();
+    }
+    
+    undo() {
+        if (this.history.length === 0) return;
+        const action = this.history.pop();
+        
+        if (action.type === 'add') {
+            this.scene.remove(action.mesh);
+            this.objects = this.objects.filter(o => o !== action.mesh);
+        } else if (action.type === 'remove') {
+            this.scene.add(action.mesh);
+            this.objects.push(action.mesh);
+        }
         this.saveLocal();
     }
 
@@ -949,11 +1028,13 @@ class LegoApp {
 
     animate() {
         requestAnimationFrame(this.animate.bind(this));
+        this.updateInteraction(); 
         this.controls.update();
         this.renderer.render(this.scene, this.camera);
     }
 
     rotatePiece() {
+        if (!this.selectedPart) return;
         this.rotationIndex = (this.rotationIndex + 1) % 4;
         this.updateGhost();
     }
@@ -965,14 +1046,17 @@ class LegoApp {
         
         if (this.isDeleteMode) {
             btn.classList.add('danger');
-            btn.textContent = 'Done (D)';
+            btn.innerHTML = 'Done <span style="opacity:0.7; font-size:0.9em">(D)</span>';
             ind.classList.add('visible');
             if(this.ghostMesh) this.ghostMesh.visible = false;
         } else {
             btn.classList.remove('danger');
-            btn.textContent = 'Delete (D)';
+            btn.innerHTML = 'Delete <span style="opacity:0.7; font-size:0.9em">(D)</span>';
             ind.classList.remove('visible');
             if(this.ghostMesh) this.ghostMesh.visible = true;
+            this.deleteHelper.visible = false;
+            this.hoveredObject = null;
+            document.body.style.cursor = 'default';
         }
     }
 
@@ -1018,9 +1102,11 @@ class LegoApp {
         this.toggleAutoMenu();
         if (!this.blueprints[modelName]) return;
         
+        // Explicit Clear for Auto Build
         const toRemove = this.objects.filter(o => o !== this.plane);
         toRemove.forEach(mesh => this.scene.remove(mesh));
         this.objects = [this.plane];
+        this.history = [];
         
         this.isAutoBuilding = true;
         this.isPaused = false;
@@ -1042,32 +1128,64 @@ class LegoApp {
             const step = steps[i];
             this.placeBlock(step.id, step.c, new THREE.Vector3(step.x, step.y, step.z), new THREE.Euler(0, step.r * (Math.PI/2), 0));
             
-            // Faster build speed for massive builds
             await new Promise(r => setTimeout(r, 100));
         }
         
         this.isAutoBuilding = false;
         this.updateStatus(null);
-        this.updateGhost();
     }
 
     clearScene() {
-        if(!confirm('Clear everything?')) return;
+        if(!confirm('Clear everything and start over?')) return;
         
-        const toRemove = this.objects.filter(o => o !== this.plane);
-        toRemove.forEach(mesh => this.scene.remove(mesh));
+        // 1. Remove ALL meshes from scene properly
+        for (let i = this.objects.length - 1; i >= 0; i--) {
+            const obj = this.objects[i];
+            if (obj !== this.plane) {
+                this.scene.remove(obj);
+                if(obj.geometry) obj.geometry.dispose();
+                if(obj.material) obj.material.dispose();
+            }
+        }
+        
+        // 2. Reset Application State
         this.objects = [this.plane];
+        this.history = []; 
+        this.deleteHelper.visible = false;
+        this.hoveredObject = null;
+        this.pendingDeleteObject = null;
+        this.isDeleteMode = false;
+        this.selectedPart = null; // Reset selection
+        
+        // 3. Reset UI State
+        document.getElementById('start-hint').style.display = 'block';
+        this.updateGhost(); // Will hide ghost since no part selected
+        this.updateUI();
+        
+        // Reset Delete UI if active
+        const delBtn = document.getElementById('delete-btn');
+        const delInd = document.getElementById('delete-indicator');
+        delBtn.classList.remove('danger');
+        delBtn.innerHTML = 'Delete <span style="opacity:0.7; font-size:0.9em">(D)</span>';
+        delInd.classList.remove('visible');
+        document.body.style.cursor = 'default';
+
         this.saveLocal();
     }
     
     selectColor(hex) {
         this.selectedColor = hex;
-        this.updateGhost();
+        if (this.selectedPart) {
+            this.updateGhost();
+        }
         this.updateUI();
         this.closeHelp(); 
     }
 
     selectPart(id) {
+        const hint = document.getElementById('start-hint');
+        if (hint) hint.style.display = 'none';
+
         this.selectedPart = id;
         this.updateGhost();
         this.updateUI();
@@ -1082,7 +1200,6 @@ class LegoApp {
             btn.style.backgroundColor = c.hex;
             btn.title = c.name;
             btn.onclick = () => this.selectColor(c.hex);
-            if(c.hex === this.selectedColor) btn.classList.add('active');
             colorContainer.appendChild(btn);
         });
 
@@ -1095,11 +1212,9 @@ class LegoApp {
             const wScale = `width: ${Math.min(35, p.w * 8)}px;`;
             btn.innerHTML = `<div class="part-icon ${p.cssClass || ''}" style="${wScale}"></div><span>${p.name}</span>`;
             btn.onclick = () => this.selectPart(p.id);
-            if(p.id === this.selectedPart) btn.classList.add('active');
             partsContainer.appendChild(btn);
         });
         
-        this.updateGhost(); 
         this.updateUI();
     }
 
